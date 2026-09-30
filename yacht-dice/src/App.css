@@ -27,6 +27,10 @@ button:focus-visible {
   outline-offset: 3px;
 }
 
+/* ================================
+   GAME
+================================ */
+
 .game {
   width: min(1400px, calc(100% - 48px));
   margin: 0 auto;
@@ -91,6 +95,10 @@ h1 {
   border-radius: 24px;
 }
 
+/* ================================
+   DICE AREA
+================================ */
+
 .dice-area {
   min-height: 690px;
   padding: 36px;
@@ -131,196 +139,421 @@ h2 {
   font-size: 18px;
 }
 
+/* ================================
+   3D DICE STAGE
+================================ */
+
 .dice-container {
+  flex: 1;
+
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: clamp(10px, 2vw, 24px);
+  gap: clamp(18px, 2.5vw, 34px);
+
   flex-wrap: wrap;
-  flex: 1;
-  padding: 70px 0 30px;
+
+  padding: 80px 10px 50px;
+
+  /*
+   * perspective가 실제 3D 깊이를 만든다.
+   */
+  perspective: 900px;
+  perspective-origin: center center;
+
+  /*
+   * 약간 위에서 내려다보는 느낌.
+   * 주사위의 윗면이 자연스럽게 보인다.
+   */
+  transform-style: preserve-3d;
 }
 
-.die {
+/* ================================
+   3D DIE
+================================ */
+
+.die-wrapper {
+  /*
+   * 실제 주사위 크기.
+   * cube와 모든 face가 동일한 크기를 사용한다.
+   */
+  --size: clamp(76px, 9vw, 108px);
+  --half-size: calc(var(--size) / 2);
+
   position: relative;
-  width: clamp(82px, 10vw, 125px);
-  aspect-ratio: 1;
+
+  width: var(--size);
+  height: var(--size);
+
+  padding: 0;
   border: 0;
-  border-radius: 22px;
-  background: #fff;
-  box-shadow:
-    0 3px 0 #d8d5cf,
-    0 12px 30px rgba(0, 0, 0, 0.08);
+  background: transparent;
+
   cursor: pointer;
+
+  /*
+   * 버튼 자체는 3D 회전하지 않는다.
+   * cube만 회전시켜야 shadow/hold가 안정적이다.
+   */
+  transform-style: preserve-3d;
+
+  appearance: none;
+
   transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
-    background 0.15s ease;
+    transform 0.18s ease,
+    filter 0.18s ease;
 }
 
-.die:hover {
-  transform: translateY(-5px);
-  box-shadow:
-    0 7px 0 #d8d5cf,
-    0 18px 34px rgba(0, 0, 0, 0.1);
+.die-wrapper:hover:not(.is-rolling) {
+  transform: translateY(-7px);
 }
 
-.die:active {
+.die-wrapper:active:not(.is-rolling) {
   transform: translateY(2px);
 }
 
-.die.held {
-  background: #171717;
-  box-shadow:
-    0 3px 0 #000,
-    0 12px 30px rgba(0, 0, 0, 0.18);
+.die-wrapper.is-held {
   transform: translateY(-10px);
 }
 
-.dots {
+.die-wrapper.is-held:hover {
+  transform: translateY(-13px);
+}
+
+/* ================================
+   CUBE
+================================ */
+
+.cube {
   position: absolute;
-  inset: 20%;
+
+  left: 0;
+  top: 0;
+
+  width: var(--size);
+  height: var(--size);
+
+  transform-style: preserve-3d;
+
+  /*
+   * JS에서 숫자로 된 회전값을 넣는다.
+   * 여러 바퀴 회전한 뒤 정확한 면에서 정지한다.
+   */
+  transform:
+    rotateX(var(--rotate-x))
+    rotateY(var(--rotate-y))
+    rotateZ(var(--rotate-z));
+
+  transition:
+    transform 1.08s cubic-bezier(0.12, 0.72, 0.18, 1);
+
+  will-change: transform;
+}
+
+/*
+ * 실제 큐브의 6개 면.
+ *
+ * 핵심:
+ * translateZ를 50%가 아니라
+ * 실제 크기의 절반(--half-size)으로 지정한다.
+ */
+.cube-face {
+  position: absolute;
+
+  width: var(--size);
+  height: var(--size);
+
+  left: 0;
+  top: 0;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  border: 2px solid #dedbd5;
+  border-radius: 15px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff 0%,
+      #f8f7f4 55%,
+      #e9e6e0 100%
+    );
+
+  box-shadow:
+    inset 0 2px 2px rgba(255, 255, 255, 0.95),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.07);
+
+  backface-visibility: hidden;
+
+  transform-style: preserve-3d;
+}
+
+/* 앞 */
+.cube-front {
+  transform: translateZ(var(--half-size));
+}
+
+/* 뒤 */
+.cube-back {
+  transform:
+    rotateY(180deg)
+    translateZ(var(--half-size));
+}
+
+/* 오른쪽 */
+.cube-right {
+  transform:
+    rotateY(90deg)
+    translateZ(var(--half-size));
+}
+
+/* 왼쪽 */
+.cube-left {
+  transform:
+    rotateY(-90deg)
+    translateZ(var(--half-size));
+}
+
+/* 위 */
+.cube-top {
+  transform:
+    rotateX(90deg)
+    translateZ(var(--half-size));
+}
+
+/* 아래 */
+.cube-bottom {
+  transform:
+    rotateX(-90deg)
+    translateZ(var(--half-size));
+}
+
+/* ================================
+   PIPS
+================================ */
+
+.cube-face .dots {
+  position: absolute;
+
+  inset: 18%;
+
   display: grid;
+
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
+
   align-items: center;
   justify-items: center;
 }
 
-.dots span {
-  width: 17px;
-  height: 17px;
+.cube-face .dots span {
+  width: clamp(11px, 1.25vw, 16px);
+  height: clamp(11px, 1.25vw, 16px);
+
   border-radius: 50%;
+
   background: #171717;
+
+  /*
+   * pip에도 살짝 입체감.
+   */
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.22),
+    0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.die.held .dots span {
+/* ================================
+   SHADOW
+================================ */
+
+.die-shadow {
+  position: absolute;
+
+  left: 8%;
+  right: 8%;
+  bottom: -20px;
+
+  height: 18px;
+
+  border-radius: 50%;
+
+  background: rgba(0, 0, 0, 0.16);
+
+  filter: blur(7px);
+
+  transform: scale(0.9);
+
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
+}
+
+.die-wrapper:hover .die-shadow {
+  transform: scale(0.78);
+  opacity: 0.7;
+}
+
+/* ================================
+   REALISTIC ROLL
+================================ */
+
+.die-wrapper.is-rolling {
+  cursor: default;
+  animation: die-bounce 1.08s cubic-bezier(0.2, 0.7, 0.25, 1);
+}
+
+.die-wrapper.is-rolling .die-shadow {
+  animation: shadow-roll 1.08s ease-in-out;
+}
+
+.die-wrapper.is-rolling .cube {
+  /*
+   * 회전은 JS에서 처리한다.
+   */
+  filter:
+    drop-shadow(0 15px 12px rgba(0, 0, 0, 0.16));
+}
+
+@keyframes die-bounce {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  15% {
+    transform: translate3d(-3px, -26px, 0);
+  }
+
+  32% {
+    transform: translate3d(4px, -54px, 0);
+  }
+
+  48% {
+    transform: translate3d(-3px, -42px, 0);
+  }
+
+  65% {
+    transform: translate3d(3px, -20px, 0);
+  }
+
+  82% {
+    transform: translate3d(-1px, -5px, 0);
+  }
+
+  93% {
+    transform: translate3d(1px, -2px, 0);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes shadow-roll {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.5;
+  }
+
+  30% {
+    transform: scale(0.6);
+    opacity: 0.25;
+  }
+
+  55% {
+    transform: scale(0.72);
+    opacity: 0.3;
+  }
+
+  75% {
+    transform: scale(0.86);
+    opacity: 0.45;
+  }
+
+  100% {
+    transform: scale(0.9);
+    opacity: 0.5;
+  }
+}
+
+/* ================================
+   HOLD
+================================ */
+
+.die-wrapper.is-held .cube-face {
+  background:
+    linear-gradient(
+      145deg,
+      #292929 0%,
+      #181818 55%,
+      #0b0b0b 100%
+    );
+
+  border-color: #090909;
+
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.08),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.45);
+}
+
+.die-wrapper.is-held .cube-face .dots span {
   background: #fff;
+
+  box-shadow:
+    0 1px 3px rgba(255, 255, 255, 0.2);
 }
 
-.dots-1 span:nth-child(1) {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.dots-2 span:nth-child(1) {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.dots-2 span:nth-child(2) {
-  grid-column: 3;
-  grid-row: 3;
-}
-
-.dots-3 span:nth-child(1) {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.dots-3 span:nth-child(2) {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.dots-3 span:nth-child(3) {
-  grid-column: 3;
-  grid-row: 3;
-}
-
-.dots-4 span:nth-child(1) {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.dots-4 span:nth-child(2) {
-  grid-column: 3;
-  grid-row: 1;
-}
-
-.dots-4 span:nth-child(3) {
-  grid-column: 1;
-  grid-row: 3;
-}
-
-.dots-4 span:nth-child(4) {
-  grid-column: 3;
-  grid-row: 3;
-}
-
-.dots-5 span:nth-child(1) {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.dots-5 span:nth-child(2) {
-  grid-column: 3;
-  grid-row: 1;
-}
-
-.dots-5 span:nth-child(3) {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.dots-5 span:nth-child(4) {
-  grid-column: 1;
-  grid-row: 3;
-}
-
-.dots-5 span:nth-child(5) {
-  grid-column: 3;
-  grid-row: 3;
-}
-
-.dots-6 span:nth-child(1) {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.dots-6 span:nth-child(2) {
-  grid-column: 3;
-  grid-row: 1;
-}
-
-.dots-6 span:nth-child(3) {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-.dots-6 span:nth-child(4) {
-  grid-column: 3;
-  grid-row: 2;
-}
-
-.dots-6 span:nth-child(5) {
-  grid-column: 1;
-  grid-row: 3;
-}
-
-.dots-6 span:nth-child(6) {
-  grid-column: 3;
-  grid-row: 3;
+.die-wrapper.is-held .die-shadow {
+  transform: scale(0.72);
+  opacity: 0.65;
 }
 
 .held-label {
   position: absolute;
+
   left: 50%;
-  bottom: 8px;
+  bottom: -28px;
+
   transform: translateX(-50%);
+
+  z-index: 20;
+
+  padding: 4px 8px;
+
+  border-radius: 5px;
+
+  background: #171717;
+  color: #fff;
+
   font-family: 'DM Mono', monospace;
   font-size: 8px;
   font-weight: 500;
+
   letter-spacing: 0.14em;
-  color: #fff;
+
+  white-space: nowrap;
+
+  pointer-events: none;
 }
+
+/* ================================
+   HOLD GUIDE
+================================ */
 
 .hold-guide {
   margin: 0 0 24px;
+
   text-align: center;
+
   color: #85817a;
+
   font-size: 13px;
 }
+
+/* ================================
+   ACTIONS
+================================ */
 
 .actions {
   display: flex;
@@ -332,12 +565,17 @@ h2 {
 .roll-button {
   min-width: 190px;
   height: 54px;
+
   border: 0;
   border-radius: 14px;
+
   background: #171717;
   color: #fff;
+
   font-weight: 700;
+
   cursor: pointer;
+
   transition:
     transform 0.15s ease,
     background 0.15s ease;
@@ -348,6 +586,10 @@ h2 {
   background: #2c2c2c;
 }
 
+.roll-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
 .roll-button:disabled {
   background: #b5b2ac;
   cursor: not-allowed;
@@ -355,25 +597,41 @@ h2 {
 
 .roll-icon {
   display: inline-block;
+
   margin-right: 8px;
+
   font-size: 20px;
 }
 
 .reset-button {
   height: 54px;
+
   padding: 0 22px;
+
   border: 1px solid #d5d1ca;
   border-radius: 14px;
+
   background: transparent;
   color: #77736c;
+
   font-family: 'DM Mono', monospace;
   font-size: 11px;
+
   cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .reset-button:hover {
   background: #f0eee9;
+  transform: translateY(-1px);
 }
+
+/* ================================
+   SCORE CARD
+================================ */
 
 .score-card {
   padding: 26px;
@@ -394,22 +652,30 @@ h2 {
 
 .score-list {
   margin-top: 22px;
+
   border-top: 1px solid #dfdcd6;
 }
 
 .score-row {
   width: 100%;
   min-height: 48px;
+
   padding: 7px 4px;
+
   display: flex;
   justify-content: space-between;
   align-items: center;
+
   border: 0;
   border-bottom: 1px solid #e8e5df;
+
   background: transparent;
   color: #171717;
+
   text-align: left;
+
   cursor: pointer;
+
   transition:
     background 0.15s ease,
     opacity 0.15s ease;
@@ -445,7 +711,9 @@ h2 {
 
 .score-value {
   color: #aaa69f;
+
   font-family: 'DM Mono', monospace;
+
   font-size: 14px !important;
 }
 
@@ -454,29 +722,54 @@ h2 {
   font-weight: 600;
 }
 
+/* BONUS 구분 */
+
+.score-row.bonus-row {
+  margin-top: 4px;
+
+  border-top: 1px dashed #cfcac2;
+
+  background: #f4f2ed;
+}
+
+.score-row.bonus-row .score-value {
+  color: #b2aea7;
+}
+
 .score-guide {
   margin: 18px 2px 0;
+
   color: #99958e;
+
   text-align: center;
+
   font-size: 10px;
 }
 
-/* RESULT */
+/* ================================
+   RESULT
+================================ */
 
 .result-screen {
   min-height: 100vh;
+
   display: flex;
   justify-content: center;
   align-items: center;
+
   padding: 40px 0;
 }
 
 .result-card {
   width: min(680px, 100%);
+
   padding: 70px 50px;
+
   border: 1px solid #d5d1ca;
   border-radius: 28px;
+
   background: #faf9f6;
+
   text-align: center;
 }
 
@@ -490,37 +783,50 @@ h2 {
 
 .result-title span {
   display: block;
+
   font-family: 'DM Mono', monospace;
+
   font-size: 13px;
+
   letter-spacing: 0.2em;
+
   color: #77736c;
 }
 
 .result-title h1 {
   margin-top: 8px;
+
   font-size: clamp(72px, 12vw, 130px);
 }
 
 .final-score {
   margin-top: 55px;
+
   display: flex;
   flex-direction: column;
+
   gap: 8px;
 }
 
 .final-score strong {
   font-family: 'DM Mono', monospace;
+
   font-size: clamp(64px, 10vw, 100px);
+
   line-height: 1;
 }
 
 .final-yacht {
   margin: 40px auto;
+
   padding: 24px;
+
   border: 1px solid #e1ded8;
   border-radius: 18px;
+
   display: flex;
   flex-direction: column;
+
   gap: 5px;
 }
 
@@ -540,18 +846,30 @@ h2 {
 .new-game-button {
   width: 220px;
   height: 56px;
+
   border: 0;
   border-radius: 14px;
+
   background: #171717;
   color: #fff;
+
   font-weight: 700;
+
   cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
 }
 
 .new-game-button:hover {
   background: #2c2c2c;
   transform: translateY(-2px);
 }
+
+/* ================================
+   TABLET
+================================ */
 
 @media (max-width: 1050px) {
   .game-board {
@@ -564,35 +882,63 @@ h2 {
 
   .score-list {
     display: grid;
+
     grid-template-columns: repeat(2, 1fr);
+
     column-gap: 20px;
   }
 }
 
+/* ================================
+   MOBILE
+================================ */
+
 @media (max-width: 650px) {
   .game {
     width: min(100% - 24px, 1400px);
+
     padding-top: 24px;
+  }
+
+  .header {
+    margin-bottom: 22px;
   }
 
   .dice-area {
     padding: 24px 16px;
+
     min-height: 600px;
   }
 
   .dice-container {
-    gap: 12px;
-    padding-top: 50px;
+    gap: 20px 13px;
+
+    padding-top: 55px;
+    padding-bottom: 45px;
+
+    perspective: 700px;
   }
 
-  .die {
-    width: 72px;
-    border-radius: 16px;
+  .die-wrapper {
+    --size: 72px;
+    --half-size: calc(var(--size) / 2);
   }
 
-  .dots span {
-    width: 12px;
-    height: 12px;
+  .cube-face {
+    border-radius: 12px;
+  }
+
+  .cube-face .dots {
+    inset: 19%;
+  }
+
+  .cube-face .dots span {
+    width: 10px;
+    height: 10px;
+  }
+
+  .held-label {
+    bottom: -25px;
   }
 
   .score-list {
@@ -610,5 +956,27 @@ h2 {
 
   .result-card {
     padding: 50px 24px;
+  }
+}
+
+/* ================================
+   REDUCED MOTION
+================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .cube {
+    transition: none;
+  }
+
+  .die-wrapper {
+    transition: none;
+  }
+
+  .die-wrapper.is-rolling {
+    animation: none;
+  }
+
+  .die-wrapper.is-rolling .die-shadow {
+    animation: none;
   }
 }
