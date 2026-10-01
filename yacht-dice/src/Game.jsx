@@ -495,17 +495,6 @@ function Game() {
 
   return (
     <main className="game">
-      <header className="header">
-        <div>
-          <p className="eyebrow">YACHT DICE</p>
-          <h1>YACHT</h1>
-        </div>
-
-        <div className="turn-info">
-          <span>TURN</span>
-          <strong>{turn} / 12</strong>
-        </div>
-      </header>
 
       <section className="game-board">
         <div className="dice-area">
