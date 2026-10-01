@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=DM+Mono:wght@400;500&family=Exo+2:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -69,7 +69,6 @@ h1 {
 
 .turn-info span,
 .roll-counter span,
-.total-score span,
 .final-score span {
   font-family: 'DM Mono', monospace;
   font-size: 11px;
@@ -86,6 +85,7 @@ h1 {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 390px;
   gap: 20px;
+  align-items: start;
 }
 
 .dice-area,
@@ -100,14 +100,12 @@ h1 {
 ================================ */
 
 .dice-area {
-  min-height: 690px;
   padding: 36px;
   display: flex;
   flex-direction: column;
 }
 
-.dice-header,
-.score-card-header {
+.dice-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -140,84 +138,145 @@ h2 {
 }
 
 /* ================================
-   3D DICE STAGE
+   TRAY (검은 트레이 + 빨간 펠트 + 보관함)
 ================================ */
 
-.dice-container {
+.tray-wrap {
   flex: 1;
-
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: clamp(18px, 2.5vw, 34px);
+  justify-content: center;
+  padding: 28px 0 24px;
+}
 
-  flex-wrap: wrap;
+.tray {
+  --die-felt: 84px;
+  --die-rack: 56px;
 
-  padding: 80px 10px 50px;
+  width: min(100%, 560px);
+  padding: 28px;
+  border-radius: 30px;
+  background: #101010;
 
-  /*
-   * perspective가 실제 3D 깊이를 만든다.
-   */
-  perspective: 900px;
-  perspective-origin: center center;
+  /* 겹겹이 단이 진 테두리 */
+  box-shadow:
+    inset 0 0 0 3px #2c2c2c,
+    inset 0 0 0 6px #050505,
+    inset 0 0 0 9px #292929,
+    inset 0 0 0 12px #050505,
+    inset 0 0 0 15px #262626,
+    inset 0 0 0 18px #050505,
+    inset 0 0 0 21px #222,
+    0 22px 36px rgba(0, 0, 0, 0.28);
+}
 
-  /*
-   * 약간 위에서 내려다보는 느낌.
-   * 주사위의 윗면이 자연스럽게 보인다.
-   */
-  transform-style: preserve-3d;
+.felt {
+  position: relative;
+  aspect-ratio: 6 / 5;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.015) 0 2px,
+      transparent 2px 4px
+    ),
+    radial-gradient(
+      ellipse at 50% 30%,
+      #c62419 0%,
+      #ab1810 55%,
+      #8e100a 100%
+    );
+  box-shadow:
+    inset 0 8px 18px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- 보관함 ---------- */
+
+.rack {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  padding-top: 4px;
+  background: #2b2b2b;
+  border-top: 4px solid #050505;
+}
+
+.rack-slot {
+  display: grid;
+  place-items: center;
+  min-height: calc(var(--die-rack) + 24px);
+  background: linear-gradient(#050505, #131313);
+  box-shadow: inset 0 6px 10px rgba(0, 0, 0, 0.8);
 }
 
 /* ================================
-   3D DIE
+   DIE
 ================================ */
 
-.die-wrapper {
-  /*
-   * 실제 주사위 크기.
-   * cube와 모든 face가 동일한 크기를 사용한다.
-   */
-  --size: clamp(76px, 9vw, 108px);
+.die-pos {
+  --size: var(--die-felt);
   --half-size: calc(var(--size) / 2);
-
-  position: relative;
 
   width: var(--size);
   height: var(--size);
+}
 
+.die-pos.in-felt {
+  position: absolute;
+  z-index: 1;
+  transform: translate(-50%, -50%);
+
+  /* 굴릴 때 새 위치로 미끄러진다 */
+  transition:
+    left 1.08s cubic-bezier(0.12, 0.72, 0.18, 1),
+    top 1.08s cubic-bezier(0.12, 0.72, 0.18, 1);
+}
+
+.die-pos.in-rack {
+  --size: var(--die-rack);
+
+  position: relative;
+}
+
+.die-pos.is-rolling {
+  z-index: 5;
+}
+
+.die {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
   padding: 0;
   border: 0;
   background: transparent;
-
   cursor: pointer;
-
-  /*
-   * 버튼 자체는 3D 회전하지 않는다.
-   * cube만 회전시켜야 shadow/hold가 안정적이다.
-   */
-  transform-style: preserve-3d;
-
   appearance: none;
 
-  transition:
-    transform 0.18s ease,
-    filter 0.18s ease;
+  /* 펠트 위에서 평면으로 돌아간 각도 */
+  transform: rotate(var(--angle));
+  transition: transform 1.08s cubic-bezier(0.12, 0.72, 0.18, 1);
 }
 
-.die-wrapper:hover:not(.is-rolling) {
-  transform: translateY(-7px);
+.die:disabled {
+  cursor: default;
 }
 
-.die-wrapper:active:not(.is-rolling) {
-  transform: translateY(2px);
+.die-lift {
+  width: 100%;
+  height: 100%;
+
+  /* 주사위 하나하나에 원근을 준다 */
+  perspective: 520px;
+  transition: transform 0.18s ease;
 }
 
-.die-wrapper.is-held {
-  transform: translateY(-10px);
+.die:not(:disabled):hover .die-lift {
+  transform: scale(1.08);
 }
 
-.die-wrapper.is-held:hover {
-  transform: translateY(-13px);
+.die:not(:disabled):active .die-lift {
+  transform: scale(0.97);
 }
 
 /* ================================
@@ -226,142 +285,84 @@ h2 {
 
 .cube {
   position: absolute;
-
-  left: 0;
-  top: 0;
-
-  width: var(--size);
-  height: var(--size);
-
+  inset: 0;
   transform-style: preserve-3d;
 
-  /*
-   * JS에서 숫자로 된 회전값을 넣는다.
-   * 여러 바퀴 회전한 뒤 정확한 면에서 정지한다.
-   */
   transform:
     rotateX(var(--rotate-x))
     rotateY(var(--rotate-y))
     rotateZ(var(--rotate-z));
 
-  transition:
-    transform 1.08s cubic-bezier(0.12, 0.72, 0.18, 1);
-
+  transition: transform 1.08s cubic-bezier(0.12, 0.72, 0.18, 1);
   will-change: transform;
 }
 
-/*
- * 실제 큐브의 6개 면.
- *
- * 핵심:
- * translateZ를 50%가 아니라
- * 실제 크기의 절반(--half-size)으로 지정한다.
- */
 .cube-face {
   position: absolute;
-
-  width: var(--size);
-  height: var(--size);
-
-  left: 0;
-  top: 0;
-
+  inset: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-
-  border: 2px solid #dedbd5;
-  border-radius: 15px;
-
-  background:
-    linear-gradient(
-      145deg,
-      #ffffff 0%,
-      #f8f7f4 55%,
-      #e9e6e0 100%
-    );
-
+  border: 1px solid #d6d3cc;
+  border-radius: calc(var(--size) * 0.16);
+  background: linear-gradient(
+    145deg,
+    #ffffff 0%,
+    #f8f7f4 55%,
+    #e9e6e0 100%
+  );
   box-shadow:
     inset 0 2px 2px rgba(255, 255, 255, 0.95),
-    inset 0 -3px 6px rgba(0, 0, 0, 0.07);
-
+    inset 0 -3px 6px rgba(0, 0, 0, 0.08);
   backface-visibility: hidden;
-
-  transform-style: preserve-3d;
 }
 
-/* 앞 */
 .cube-front {
   transform: translateZ(var(--half-size));
 }
 
-/* 뒤 */
 .cube-back {
-  transform:
-    rotateY(180deg)
-    translateZ(var(--half-size));
+  transform: rotateY(180deg) translateZ(var(--half-size));
 }
 
-/* 오른쪽 */
 .cube-right {
-  transform:
-    rotateY(90deg)
-    translateZ(var(--half-size));
+  transform: rotateY(90deg) translateZ(var(--half-size));
 }
 
-/* 왼쪽 */
 .cube-left {
-  transform:
-    rotateY(-90deg)
-    translateZ(var(--half-size));
+  transform: rotateY(-90deg) translateZ(var(--half-size));
 }
 
-/* 위 */
 .cube-top {
-  transform:
-    rotateX(90deg)
-    translateZ(var(--half-size));
+  transform: rotateX(90deg) translateZ(var(--half-size));
 }
 
-/* 아래 */
 .cube-bottom {
-  transform:
-    rotateX(-90deg)
-    translateZ(var(--half-size));
+  transform: rotateX(-90deg) translateZ(var(--half-size));
 }
 
 /* ================================
    PIPS
 ================================ */
 
-.cube-face .dots {
+.dots {
   position: absolute;
-
-  inset: 18%;
-
+  inset: 16%;
   display: grid;
-
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
-
-  align-items: center;
-  justify-items: center;
+  place-items: center;
 }
 
-.cube-face .dots span {
-  width: clamp(11px, 1.25vw, 16px);
-  height: clamp(11px, 1.25vw, 16px);
-
+.dots span {
+  width: calc(var(--size) * 0.16);
+  height: calc(var(--size) * 0.16);
   border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #3a3a3a, #111 70%);
+}
 
-  background: #171717;
-
-  /*
-   * pip에도 살짝 입체감.
-   */
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.22),
-    0 1px 2px rgba(0, 0, 0, 0.2);
+.dots span.blank {
+  visibility: hidden;
 }
 
 /* ================================
@@ -370,171 +371,49 @@ h2 {
 
 .die-shadow {
   position: absolute;
-
-  left: 8%;
-  right: 8%;
-  bottom: -20px;
-
-  height: 18px;
-
-  border-radius: 50%;
-
-  background: rgba(0, 0, 0, 0.16);
-
-  filter: blur(7px);
-
-  transform: scale(0.9);
-
-  transition:
-    transform 0.25s ease,
-    opacity 0.25s ease;
-}
-
-.die-wrapper:hover .die-shadow {
-  transform: scale(0.78);
-  opacity: 0.7;
-}
-
-/* ================================
-   REALISTIC ROLL
-================================ */
-
-.die-wrapper.is-rolling {
-  cursor: default;
-  animation: die-bounce 1.08s cubic-bezier(0.2, 0.7, 0.25, 1);
-}
-
-.die-wrapper.is-rolling .die-shadow {
-  animation: shadow-roll 1.08s ease-in-out;
-}
-
-.die-wrapper.is-rolling .cube {
-  /*
-   * 회전은 JS에서 처리한다.
-   */
-  filter:
-    drop-shadow(0 15px 12px rgba(0, 0, 0, 0.16));
-}
-
-@keyframes die-bounce {
-  0% {
-    transform: translate3d(0, 0, 0);
-  }
-
-  15% {
-    transform: translate3d(-3px, -26px, 0);
-  }
-
-  32% {
-    transform: translate3d(4px, -54px, 0);
-  }
-
-  48% {
-    transform: translate3d(-3px, -42px, 0);
-  }
-
-  65% {
-    transform: translate3d(3px, -20px, 0);
-  }
-
-  82% {
-    transform: translate3d(-1px, -5px, 0);
-  }
-
-  93% {
-    transform: translate3d(1px, -2px, 0);
-  }
-
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-@keyframes shadow-roll {
-  0% {
-    transform: scale(0.9);
-    opacity: 0.5;
-  }
-
-  30% {
-    transform: scale(0.6);
-    opacity: 0.25;
-  }
-
-  55% {
-    transform: scale(0.72);
-    opacity: 0.3;
-  }
-
-  75% {
-    transform: scale(0.86);
-    opacity: 0.45;
-  }
-
-  100% {
-    transform: scale(0.9);
-    opacity: 0.5;
-  }
-}
-
-/* ================================
-   HOLD
-================================ */
-
-.die-wrapper.is-held .cube-face {
-  background:
-    linear-gradient(
-      145deg,
-      #292929 0%,
-      #181818 55%,
-      #0b0b0b 100%
-    );
-
-  border-color: #090909;
-
-  box-shadow:
-    inset 0 2px 3px rgba(255, 255, 255, 0.08),
-    inset 0 -4px 8px rgba(0, 0, 0, 0.45);
-}
-
-.die-wrapper.is-held .cube-face .dots span {
-  background: #fff;
-
-  box-shadow:
-    0 1px 3px rgba(255, 255, 255, 0.2);
-}
-
-.die-wrapper.is-held .die-shadow {
-  transform: scale(0.72);
-  opacity: 0.65;
-}
-
-.held-label {
-  position: absolute;
-
-  left: 50%;
-  bottom: -28px;
-
-  transform: translateX(-50%);
-
-  z-index: 20;
-
-  padding: 4px 8px;
-
-  border-radius: 5px;
-
-  background: #171717;
-  color: #fff;
-
-  font-family: 'DM Mono', monospace;
-  font-size: 8px;
-  font-weight: 500;
-
-  letter-spacing: 0.14em;
-
-  white-space: nowrap;
-
+  inset: 4%;
+  border-radius: calc(var(--size) * 0.18);
+  background: rgba(0, 0, 0, 0.45);
+  filter: blur(5px);
+  transform: translate(4px, 6px);
+  opacity: 0.5;
   pointer-events: none;
+}
+
+.in-rack .die-shadow {
+  transform: translate(2px, 3px);
+  filter: blur(3px);
+}
+
+/* ================================
+   ROLL (위에서 내려다본 던지기)
+================================ */
+
+.die-pos.is-rolling .die {
+  cursor: default;
+}
+
+.die-pos.is-rolling .die-lift {
+  animation: die-toss 1.08s cubic-bezier(0.2, 0.7, 0.25, 1);
+}
+
+.die-pos.is-rolling .die-shadow {
+  animation: shadow-toss 1.08s ease-in-out;
+}
+
+@keyframes die-toss {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.5); }
+  65% { transform: scale(1.28); }
+  85% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shadow-toss {
+  0% { transform: translate(4px, 6px) scale(1); opacity: 0.5; }
+  35% { transform: translate(22px, 30px) scale(1.15); opacity: 0.2; }
+  65% { transform: translate(14px, 20px) scale(1.1); opacity: 0.3; }
+  100% { transform: translate(4px, 6px) scale(1); opacity: 0.5; }
 }
 
 /* ================================
@@ -543,11 +422,8 @@ h2 {
 
 .hold-guide {
   margin: 0 0 24px;
-
   text-align: center;
-
   color: #85817a;
-
   font-size: 13px;
 }
 
@@ -565,17 +441,12 @@ h2 {
 .roll-button {
   min-width: 190px;
   height: 54px;
-
   border: 0;
   border-radius: 14px;
-
   background: #171717;
   color: #fff;
-
   font-weight: 700;
-
   cursor: pointer;
-
   transition:
     transform 0.15s ease,
     background 0.15s ease;
@@ -597,28 +468,20 @@ h2 {
 
 .roll-icon {
   display: inline-block;
-
   margin-right: 8px;
-
   font-size: 20px;
 }
 
 .reset-button {
   height: 54px;
-
   padding: 0 22px;
-
   border: 1px solid #d5d1ca;
   border-radius: 14px;
-
   background: transparent;
   color: #77736c;
-
   font-family: 'DM Mono', monospace;
   font-size: 11px;
-
   cursor: pointer;
-
   transition:
     background 0.15s ease,
     transform 0.15s ease;
@@ -630,120 +493,245 @@ h2 {
 }
 
 /* ================================
-   SCORE CARD
+   SCOREBOARD (image style)
 ================================ */
 
 .score-card {
-  padding: 26px;
+  --sb-dark: #3d3d3d;
+  --sb-yellow: #ffdd57;
+  --sb-yellow-hover: #ffe98f;
+  --sb-pink: #fbe9e2;
+  --sb-gray: #a8a8a8;
+  --sb-cream: #fffaf0;
+
+  padding: 12px;
   overflow: hidden;
+  background: var(--sb-cream);
+  font-family: 'Exo 2', 'Inter', sans-serif;
 }
 
-.total-score {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+.sb-head,
+.sb-row,
+.sb-sum,
+.sb-total {
+  display: grid;
+  grid-template-columns: 1fr 112px;
   gap: 3px;
 }
 
-.total-score strong {
-  font-family: 'DM Mono', monospace;
-  font-size: 26px;
+.sb-head {
+  margin-bottom: 3px;
 }
 
-.score-list {
-  margin-top: 22px;
-
-  border-top: 1px solid #dfdcd6;
-}
-
-.score-row {
-  width: 100%;
-  min-height: 48px;
-
-  padding: 7px 4px;
-
+.sb-turn {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  color: #8b8680;
+  line-height: 1;
+}
 
+.sb-turn span {
+  font-size: 28px;
+  font-weight: 500;
+}
+
+.sb-turn strong {
+  margin-top: 4px;
+  font-size: 46px;
+  font-weight: 500;
+}
+
+.sb-player {
+  display: grid;
+  place-items: center;
+  min-height: 84px;
+  background: var(--sb-pink);
+  border: 2px solid var(--sb-dark);
+  color: #7a6a63;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+}
+
+.sb-title {
+  margin-bottom: 3px;
+  padding: 8px 12px;
+  background: var(--sb-dark);
+  color: #fff;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+/* ---------- 행 ---------- */
+
+.sb-row {
+  width: 100%;
+  min-height: 46px;
+  margin-bottom: 3px;
+  padding: 0;
   border: 0;
-  border-bottom: 1px solid #e8e5df;
-
   background: transparent;
-  color: #171717;
-
-  text-align: left;
-
   cursor: pointer;
-
-  transition:
-    background 0.15s ease,
-    opacity 0.15s ease;
+  text-align: left;
 }
 
-.score-row:hover:not(:disabled) {
-  background: #f0eee9;
-}
-
-.score-row:disabled {
+.sb-row:disabled {
   cursor: default;
 }
 
-.score-row.used {
-  opacity: 0.4;
-}
-
-.score-row div {
+.sb-label {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  background: var(--sb-cream);
+  border: 2px solid var(--sb-dark);
+  color: #222;
+  font-size: 20px;
+  font-weight: 500;
 }
 
-.score-row strong {
-  font-size: 11px;
-  letter-spacing: 0.02em;
-}
-
-.score-row span {
-  color: #99958e;
-  font-size: 9px;
-}
-
-.score-value {
-  color: #aaa69f;
-
-  font-family: 'DM Mono', monospace;
-
-  font-size: 14px !important;
-}
-
-.score-value.confirmed {
-  color: #171717;
+.sb-cell {
+  display: grid;
+  place-items: center;
+  background: var(--sb-yellow);
+  border: 2px solid var(--sb-dark);
+  color: #222;
+  font-size: 24px;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
-/* BONUS 구분 */
-
-.score-row.bonus-row {
-  margin-top: 4px;
-
-  border-top: 1px dashed #cfcac2;
-
-  background: #f4f2ed;
+.sb-cell.is-preview {
+  color: rgba(34, 34, 34, 0.38);
 }
 
-.score-row.bonus-row .score-value {
-  color: #b2aea7;
+.sb-cell.is-confirmed {
+  color: #171717;
+}
+
+.sb-row:not(:disabled):hover .sb-cell {
+  background: var(--sb-yellow-hover);
+}
+
+.sb-row:not(:disabled):hover .sb-label {
+  background: #fff3d6;
+}
+
+/* ---------- 픽셀 아이콘 ---------- */
+
+.pixel-icon {
+  display: inline-grid;
+  grid-template-columns: repeat(3, 4px);
+  grid-template-rows: repeat(3, 4px);
+  gap: 2px;
+  flex: none;
+  vertical-align: middle;
+}
+
+.pixel-icon i {
+  background: transparent;
+}
+
+.pixel-icon i.on {
+  background: #222;
+}
+
+.pixel-icon.is-dice {
+  padding: 3px;
+  border-radius: 5px;
+  background: #222;
+}
+
+.pixel-icon.is-dice i.on {
+  background: #fff;
+  border-radius: 1px;
+}
+
+/* ---------- Subtotal / Bonus ---------- */
+
+.sb-block {
+  margin: 3px 0;
+  background: var(--sb-dark);
+  color: #fff;
+}
+
+.sb-sum + .sb-sum {
+  border-top: 2px dotted #fff;
+}
+
+.sb-sum-label {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.sb-sum-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 8px;
+  background: var(--sb-gray);
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sb-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 3px;
+  padding: 6px 8px;
+  border: 2px solid var(--sb-dark);
+  color: #333;
+  font-size: 13px;
+}
+
+/* ---------- 그룹 박스 ---------- */
+
+.sb-group {
+  margin-bottom: 8px;
+  padding: 3px 3px 0;
+  border: 2px solid var(--sb-dark);
+}
+
+/* ---------- Total ---------- */
+
+.sb-total {
+  padding: 3px;
+  background: var(--sb-dark);
+  color: #fff;
+}
+
+.sb-total-label {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 26px;
+  font-weight: 500;
+}
+
+.sb-total-cell {
+  display: grid;
+  place-items: center;
+  min-height: 60px;
+  background: var(--sb-yellow);
+  color: #222;
+  font-size: 32px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 .score-guide {
-  margin: 18px 2px 0;
-
+  margin: 14px 2px 2px;
   color: #99958e;
-
   text-align: center;
-
-  font-size: 10px;
+  font-size: 11px;
 }
 
 /* ================================
@@ -752,24 +740,18 @@ h2 {
 
 .result-screen {
   min-height: 100vh;
-
   display: flex;
   justify-content: center;
   align-items: center;
-
   padding: 40px 0;
 }
 
 .result-card {
   width: min(680px, 100%);
-
   padding: 70px 50px;
-
   border: 1px solid #d5d1ca;
   border-radius: 28px;
-
   background: #faf9f6;
-
   text-align: center;
 }
 
@@ -783,50 +765,37 @@ h2 {
 
 .result-title span {
   display: block;
-
   font-family: 'DM Mono', monospace;
-
   font-size: 13px;
-
   letter-spacing: 0.2em;
-
   color: #77736c;
 }
 
 .result-title h1 {
   margin-top: 8px;
-
   font-size: clamp(72px, 12vw, 130px);
 }
 
 .final-score {
   margin-top: 55px;
-
   display: flex;
   flex-direction: column;
-
   gap: 8px;
 }
 
 .final-score strong {
   font-family: 'DM Mono', monospace;
-
   font-size: clamp(64px, 10vw, 100px);
-
   line-height: 1;
 }
 
 .final-yacht {
   margin: 40px auto;
-
   padding: 24px;
-
   border: 1px solid #e1ded8;
   border-radius: 18px;
-
   display: flex;
   flex-direction: column;
-
   gap: 5px;
 }
 
@@ -846,17 +815,12 @@ h2 {
 .new-game-button {
   width: 220px;
   height: 56px;
-
   border: 0;
   border-radius: 14px;
-
   background: #171717;
   color: #fff;
-
   font-weight: 700;
-
   cursor: pointer;
-
   transition:
     transform 0.15s ease,
     background 0.15s ease;
@@ -877,15 +841,9 @@ h2 {
   }
 
   .score-card {
-    min-height: auto;
-  }
-
-  .score-list {
-    display: grid;
-
-    grid-template-columns: repeat(2, 1fr);
-
-    column-gap: 20px;
+    max-width: 480px;
+    width: 100%;
+    margin: 0 auto;
   }
 }
 
@@ -896,7 +854,6 @@ h2 {
 @media (max-width: 650px) {
   .game {
     width: min(100% - 24px, 1400px);
-
     padding-top: 24px;
   }
 
@@ -905,44 +862,18 @@ h2 {
   }
 
   .dice-area {
-    padding: 24px 16px;
-
-    min-height: 600px;
+    padding: 24px 14px;
   }
 
-  .dice-container {
-    gap: 20px 13px;
-
-    padding-top: 55px;
-    padding-bottom: 45px;
-
-    perspective: 700px;
+  .tray-wrap {
+    padding: 20px 0 16px;
   }
 
-  .die-wrapper {
-    --size: 72px;
-    --half-size: calc(var(--size) / 2);
-  }
+  .tray {
+    --die-felt: 58px;
+    --die-rack: 42px;
 
-  .cube-face {
-    border-radius: 12px;
-  }
-
-  .cube-face .dots {
-    inset: 19%;
-  }
-
-  .cube-face .dots span {
-    width: 10px;
-    height: 10px;
-  }
-
-  .held-label {
-    bottom: -25px;
-  }
-
-  .score-list {
-    display: block;
+    padding: 24px;
   }
 
   .actions {
@@ -952,6 +883,14 @@ h2 {
   .roll-button,
   .reset-button {
     width: 100%;
+  }
+
+  .sb-label {
+    font-size: 17px;
+  }
+
+  .sb-turn strong {
+    font-size: 38px;
   }
 
   .result-card {
@@ -964,19 +903,15 @@ h2 {
 ================================ */
 
 @media (prefers-reduced-motion: reduce) {
-  .cube {
+  .cube,
+  .die,
+  .die-lift,
+  .die-pos.in-felt {
     transition: none;
   }
 
-  .die-wrapper {
-    transition: none;
-  }
-
-  .die-wrapper.is-rolling {
-    animation: none;
-  }
-
-  .die-wrapper.is-rolling .die-shadow {
+  .die-pos.is-rolling .die-lift,
+  .die-pos.is-rolling .die-shadow {
     animation: none;
   }
 }
